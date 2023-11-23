@@ -1,52 +1,53 @@
-from abc import ABC, abstractmethod
-import random
+from datetime import datetime
+from decimal import Decimal
 
 
-class Reward(ABC):
-    @abstractmethod
-    def rewards(self):
-        pass
+class Ticket:
+    def __init__(self, id, departure_zone, arrival_zone, route_number, departure_time, arrival_time, buyer_id, is_used,
+                 price, place):
+        self.id = id
+        self.departure_zone = departure_zone
+        self.arrival_zone = arrival_zone
+        self.route_number = route_number
+        self.departure_time = departure_time
+        self.arrival_time = arrival_time
+        self.buyer_id = buyer_id
+        self.is_used = is_used
+        self.price = price
+        self.place = place
+        self.owner = None
+
+    def set_owner(self, user):
+        self.owner = user
+
+    def purchase_ticket(self, user, user_account):
+        if user_account.balance >= self.price:
+            user_account.balance -= self.price
+            self.buyer_id = user.id
+            self.owner = user
+            user.add_ticket(self)
+            print(f"Билет на маршрут {self.route_number} куплен успешно!")
+        else:
+            print("Недостаточно средств для покупки билета.")
 
 
-class GenericReward:
-    def __init__(self, name, ratio):
+class Account:
+    def __init__(self, user_account_id, balance):
+        self.user_account_id = user_account_id
+        self.balance = balance
+
+
+class User:
+    def __init__(self, id, name, login, pass_hash_code, account_id):
+        self.id = id
         self.name = name
-        self.ratio = ratio
+        self.tickets = []
+        self.login = login
+        self.pass_hash_code = pass_hash_code
+        self.account_id = account_id
 
+    def add_ticket(self, ticket):
+        self.tickets.append(ticket)
 
-class RewardFactory:
-    def __init__(self, rew):
-        self.rewards = rew
-
-    def create_reward(self):
-        total_ratio = sum([reward.ratio for reward in self.rewards])
-        choice = random.uniform(0, total_ratio)
-        current = 0
-        for reward in self.rewards:
-            if current + reward.ratio >= choice:
-                return reward
-            current += reward.ratio
-        return None
-
-
-rewards = [
-    GenericReward("1st place", 10),
-    GenericReward("2nd place", 10),
-    GenericReward("3rd place", 10),
-    GenericReward("4th place", 10),
-    GenericReward("5th place", 10),
-    GenericReward("Gold", 3),
-    GenericReward("Gem", 1)
-]
-
-factory = RewardFactory(rewards)
-
-reward_counts = {reward.name: 0 for reward in rewards}
-num_rewards = 54
-
-for _ in range(num_rewards):
-    reward = factory.create_reward()
-    reward_counts[reward.name] += 1
-
-for reward, count in reward_counts.items():
-    print(f"{reward}: {count}")
+    def remove_ticket(self, ticket):
+        self.tickets.remove(ticket)
